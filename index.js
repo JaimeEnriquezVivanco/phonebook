@@ -58,11 +58,26 @@ app.delete('/api/persons/:id', (req, res) => {
 
 app.post('/api/persons/', (req, res) => {
     const body = req.body
+
+    if (!body.name || !body.number) {
+        let errObj = { error: "missing data in request body" }
+        res.status(400).json(errObj).end()
+        return
+    }
+
     const person = {
         id: crypto.randomUUID(),
         name: body.name,
         number: body.number
     }
+
+    const isAlreadySaved = persons.some(p => p.name === person.name)
+    if (isAlreadySaved) {
+        let errObj = { error: "person already exists" }
+        res.status(400).json(errObj).end()
+        return
+    }
+
     persons.push(person)
     res.json(person)
 })
