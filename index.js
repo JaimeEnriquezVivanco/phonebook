@@ -58,17 +58,35 @@ app.post('/api/persons/', (req, res) => {
         return
     }
 
-    // ex 3.14 says can be ignored
-    // const isAlreadySaved = persons.some(p => p.name === person.name)
-    // if (isAlreadySaved) {
-    //     let errObj = { error: "person already exists" }
-    //     res.status(400).json(errObj).end()
-    //     return
-    // }
-
     Person
         .create({ name, number })
         .then(person => res.json(person))
+})
+
+app.put('/api/persons/:id', (req, res, next) => {
+    const { name, number } = req.body
+
+    if (!name || !number) {
+        let errObj = { error: "missing data in request body" }
+        res.status(400).json(errObj).end()
+        return
+    }
+
+    Person
+        .findById(req.params.id)
+        .then(person => {
+            if (!person) {
+                return res.status(404).end()
+            }
+
+            person.name = name
+            person.number = number
+
+            return person.save().then(updatedPerson => {
+                res.json(updatedPerson)
+            })
+        })
+        .catch(error => next(error))
 })
 
 const unknownEndpoint = (request, response) => {
