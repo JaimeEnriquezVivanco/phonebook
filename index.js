@@ -1,10 +1,10 @@
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
-const cors = require('cors')
 const app = express()
+const Person = require('./models/person')
 
 app.use(express.json())
-app.use(cors())
 app.use(express.static('dist'))
 
 morgan.token('body', (req) => {
@@ -13,51 +13,31 @@ morgan.token('body', (req) => {
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
-let persons = [
-    {
-        "id": "1",
-        "name": "Arto Hellas",
-        "number": "040-123456"
-    },
-    {
-        "id": "2",
-        "name": "Ada Lovelace",
-        "number": "39-44-5323523"
-    },
-    {
-        "id": "3",
-        "name": "Dan Abramov",
-        "number": "12-43-234345"
-    },
-    {
-        "id": "4",
-        "name": "Mary Poppendieck",
-        "number": "39-23-6423122"
-    }
-]
-
 app.get('/info', (request, response) => {
-    let now = new Date().toString()
-    let res = `
-    Phonebook has info for ${persons.length} people
-    <br/>
-    ${now}
-    `
-    response.send(res)
+    Person
+        .countDocuments({})
+        .then(count => {
+            let now = new Date().toString()
+            let res = `
+            Phonebook has info for ${count} people
+            <br/>
+            ${now}
+            `
+            response.send(res)
+        })
+
 })
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person
+        .find({})
+        .then(people => response.json(people))
 })
 
 app.get('/api/persons/:id', (request, response) => {
-    const person = persons.find(p => p.id === request.params.id)
-
-    if (person) {
-        response.json(person)
-    } else {
-        response.status(404).end()
-    }
+    Person
+        .findById(request.params.id)
+        .then(person => response.json(person))
 })
 
 app.delete('/api/persons/:id', (req, res) => {
@@ -67,32 +47,29 @@ app.delete('/api/persons/:id', (req, res) => {
 })
 
 app.post('/api/persons/', (req, res) => {
-    const body = req.body
+    const name = req.body.name
+    const number = req.body.number
 
-    if (!body.name || !body.number) {
+    if (!name || !number) {
         let errObj = { error: "missing data in request body" }
         res.status(400).json(errObj).end()
         return
     }
 
-    const person = {
-        id: crypto.randomUUID(),
-        name: body.name,
-        number: body.number
-    }
+    // ex 3.14 says can be ignored
+    // const isAlreadySaved = persons.some(p => p.name === person.name)
+    // if (isAlreadySaved) {
+    //     let errObj = { error: "person already exists" }
+    //     res.status(400).json(errObj).end()
+    //     return
+    // }
 
-    const isAlreadySaved = persons.some(p => p.name === person.name)
-    if (isAlreadySaved) {
-        let errObj = { error: "person already exists" }
-        res.status(400).json(errObj).end()
-        return
-    }
-
-    persons.push(person)
-    res.json(person)
+    Person
+        .create({ name, number })
+        .then(person => res.json(person))
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
