@@ -13,6 +13,7 @@ morgan.token('body', (req) => {
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
+// change for ex 3.18
 app.get('/info', (request, response) => {
     Person
         .countDocuments({})
@@ -34,6 +35,7 @@ app.get('/api/persons', (request, response) => {
         .then(people => response.json(people))
 })
 
+// change for ex 3.18
 app.get('/api/persons/:id', (request, response) => {
     Person
         .findById(request.params.id)
